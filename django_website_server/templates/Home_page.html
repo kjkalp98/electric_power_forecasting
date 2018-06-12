@@ -1,0 +1,448 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+  <style>
+  table,th,td{
+    border: 2px solid black;
+  }
+  table {
+    width: 80%;
+  }
+
+  th, td {
+    padding: 8px;
+    text-align: left;
+    /*border-bottom: 1px solid #ddd;*/
+  }
+
+  tr:hover {
+    background-color:#808080;
+  }
+  body {
+      background-color: lightblue;
+  }
+  h1 {
+      color: purple;
+      text-align: center;
+  }
+  p {
+      font-family: verdana;
+      font-size: 25px;
+  }
+  .c3-axis-y-label {
+    font-size: 16px;
+    fill: gray;
+  }
+  .c3-axis-x-label {
+    font-size: 18px;
+    fill: gray;
+  }
+  /*line {
+    stroke-width: 100px;
+  }*/
+
+  </style>
+  <title>Delhi Load Data</title>
+
+<!-- Load c3.css -->
+<link href="/static/c3-0.4.18/c3.css" rel="stylesheet">
+<!-- Load d3.js and c3.js -->
+<script src="/static/c3-0.4.18/d3.v3.min.js" charset="utf-8"></script>
+<script src="/static/c3-0.4.18/c3.min.js"></script>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous">       </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous">      </script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous">      </script>
+<script src = "/static/jquery-3.3.1.js"></script>
+
+</head>
+
+<body >
+
+<nav class="navbar navbar-expand-lg navbar-light bg-primary">
+  <a class="navbar-brand" href="#">Load Forcasting</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navbarNav">
+  </div>
+        <span class="navbar-text">
+        {% if request.user.is_authenticated %}
+        <p>Welcome {{user.first_name}}!
+        <a class="nav-link btn-small btn" href="/logout">Logout</a>
+        </p>
+
+        {% else %}
+        <a class="nav-link " href="/form">Login / Register</a>
+        {% endif %}
+    </span>
+</nav>
+
+<br>
+<h1>Delhi Real Time Load and Forecasted plots </h1>
+<!-- <button id="kp">Sub</button> -->
+<div id ="ope"></div>
+<table align='center'>
+  <thead>
+    <tr>
+      <th>Features</th>
+      <th>SMA</th>
+      <th>WMA</th>
+      <th>SES</th>
+      <th>ARIMA</th>
+      <th>LSTM</th>
+      <th>GRU</th>
+      <th>RNN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>RMSE (in MW)</td>
+      <td colspan="1" id='sma'>Wait</td>
+      <td colspan="1" id='wma'>Wait</td>
+      <td colspan="1" id='ses'>Wait</td>
+      <td colspan="1" id='arima'>Wait</td>
+      <td colspan="1" id='lstm'>Wait</td>
+      <td colspan="1" id='gru'>Wait</td>
+      <td colspan="1" id='rnn'>Wait</td>
+    </tr>
+
+    <tr>
+      <td>MAPE (in %)</td>
+      <td colspan="1" id='smaM'>Wait</td>
+      <td colspan="1" id='wmaM'>Wait</td>
+      <td colspan="1" id='sesM'>Wait</td>
+      <td colspan="1" id='arimaM'>Wait</td>
+      <td colspan="1" id='lstmM'>Wait</td>
+      <td colspan="1" id='gruM'>Wait</td>
+      <td colspan="1" id='rnnM'>Wait</td>
+    </tr>
+  </tbody>
+</table>
+<script>
+let day = "{{Day}}";
+let month ="{{Month}}";
+let year = "{{Year}}";
+console.log(year+"-"+month+"-"+day);
+// console.log("/static/SLDC_Data/"+ year + "/"+ month + "/" + day + "-" + month + "-" + year +".csv")
+$(document).ready(function(){
+    var gap = {
+    "fc": year+"-"+month+"-"+day,
+    // to: $("#to").val(),
+  };
+  console.log("adsfadsfdff");
+  console.log(gap);
+  console.log(gap.fc);
+  var csrftoken = getCookie('csrftoken');
+  $.ajaxSetup({
+    beforeSend: function(xhr, settings) {
+      xhr.setRequestHeader("X-CSRFToken", csrftoken);
+    }
+  });
+  $.ajax({
+    type: 'POST',
+    url: '/show_forecasted_smavg_data/',
+    data: gap,
+    success: function(x){
+      console.log(x);
+      fun2(x);
+      console.log('kumar');
+    },
+  });
+});
+const fun2  = function(data){
+        console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        console.log('asdgf',data);
+        console.log("ooooooooooooooooooooooooooooooo");
+        let load = data;
+        console.log(load.forecasted_Load);
+        var a = document.getElementById('sma');
+        a.innerHTML = load.rmseSMA;
+        var b = document.getElementById('wma');
+        b.innerHTML = load.rmseWMA;
+        var c = document.getElementById('ses');
+        c.innerHTML = load.rmseSES;
+        var d = document.getElementById('arima');
+        d.innerHTML = load.rmseARIMA;
+        var e = document.getElementById('lstm');
+        e.innerHTML = load.rmseLSTM;
+        var f = document.getElementById('gru');
+        f.innerHTML = load.rmseGRU;
+        var g = document.getElementById('rnn');
+        g.innerHTML = load.rmseRNN;
+
+        var aM = document.getElementById('smaM');
+        aM.innerHTML = load.mapeSMA;
+        var bM = document.getElementById('wmaM');
+        bM.innerHTML = load.mapeWMA;
+        var cM = document.getElementById('sesM');
+        cM.innerHTML = load.mapeSES;
+        var dM = document.getElementById('arimaM');
+        dM.innerHTML = load.mapeARIMA;
+        var eM = document.getElementById('lstmM');
+        eM.innerHTML = load.mapeLSTM;
+        var fM = document.getElementById('gruM');
+        fM.innerHTML = load.mapeGRU;
+        var gM = document.getElementById('rnnM');
+        gM.innerHTML = load.mapeRNN;
+        //   let datee = (parseInt(tarikh[8]+tarikh[9]) + i).toString() + '-' + tarikh[5]+tarikh[6] +'-'+tarikh[0]+tarikh[1]+tarikh[2]+tarikh[3];
+        var chart = c3.generate({
+          bindto: '#ope',
+          data: {
+            x: 'x',
+            xFormat:'%H:%M',
+            columns: load.forecasted_Load,
+          },
+          color: {
+            pattern: ['#1f77b4', '#FF0000', '#ff7f0e', '#8B0000', '#2ca02c', '#00FFFF', '#d62728', '#000000']
+          },
+          axis: {
+            y: {
+              label:{
+                text:'POWER IN MW',
+                position: 'outer-middle',
+              },
+            },
+            x: {
+              label:{
+                text: 'Time',
+                position:'outer-right',
+              },
+              type: 'timeseries',
+              tick:{
+                format:'%H:%M'
+              }
+            }
+          },
+          point: {
+            show: false
+          },
+          // zoom: {
+          //   enabled:true,
+          //   rescale:true,
+          //   extent: [1, 100],
+          // },
+          grid: {
+            x: {
+              show: true,
+            },
+            y: {
+              show: true,
+            },
+          },
+      });
+    };
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// let day = "{{Day}}";
+// let month ="{{Month}}";
+// let year = "{{Year}}";
+// console.log(day+"-"+month+"-"+year);
+// console.log("/static/SLDC_Data/"+ year + "/"+ month + "/" + day + "-" + month + "-" + year +".csv")
+// $(document).ready(function(){
+//     // $('#kp').on('click', function(){
+//         console.log("aaaaaaaaaaaaaaaaaooooooooooooooooooooooooooooooo");
+//         let load = data;
+//         //   let datee = (parseInt(tarikh[8]+tarikh[9]) + i).toString() + '-' + tarikh[5]+tarikh[6] +'-'+tarikh[0]+tarikh[1]+tarikh[2]+tarikh[3];
+//         var chart = c3.generate({
+//           bindto: '#ope',
+//           data: {
+//             x: 'x',
+//             url:"/static/SLDC_Data/"+ year + "/"+ month + "/" + day + "-" + month + "-" + year +".csv",
+//             xFormat: '%H:%M:%S',
+//           },
+//           legend: {
+//             hide: true
+//             //or hide: 'data1'
+//             //or hide: ['data1', 'data2']
+//           },
+//           axis: {
+//             y: {
+//               label:{
+//                 text:'POWER IN MW',
+//                 position: 'outer-middle',
+//               },
+//             },
+//             x: {
+//               label:{
+//                 text: 'Time',
+//                 position:'outer-center',
+//               },
+//               type: 'timeseries',
+//               tick:{
+//                 format:'%H:%M:%S'
+//               }
+//             }
+//           },
+//           zoom: {
+//             enabled:true,
+//             rescale:true,
+//             extent: [1, 100],
+//           },
+//           grid: {
+//             x: {
+//               show: true,
+//             },
+//             y: {
+//               show: true,
+//             },
+//           },
+//       });
+//     // });
+//  });
+</script>
+
+
+ <!--  <script> function func(){
+
+  }</script>
+ -->
+<!-- <h3>{{Day}}</h3> -->
+<!-- <h3>{{load.varix}}</h3> -->
+<!-- </form> -->
+<!-- <form action="" method="get">
+  <label for="GET-name">Name:</label>
+  <input id="GET-name" type="text" name="name">
+  <input type="submit" value="Save">
+</form> -->
+
+<!-- <form method='post' action ="">{% csrf_token %}
+  From:
+  <input type="date" name="from" required="true">
+  To:
+  <input type="date" name="to" required="true">
+  <input type="submit" value="submit"/>
+</form -->
+<!-- <form> -->
+<br>
+
+<h1 id="w"> Date wise Delhi Load Plots</h1>
+
+<p>
+  From:<input type="date" id="from" required="true">
+  To:<input type="date" id="to" required="true">
+  <a href="#w"><button id="ddd">Submit</button></a>
+</p>
+
+<div id ="d"></div>
+<script src = "/static/main.js"></script>
+
+<h1 id="q">Comparison of Forecasted Graphs</h1>
+
+<p>
+  Date:<input type="date" id="fc" required="true">
+  <!-- <button id="dddd">Submit</button> -->
+  <a href="#q"><button id="dddd">Submit</button></a>
+</p>
+<div id="Forecasting"></div>
+<table align='center'>
+  <thead>
+    <tr>
+      <th>Features</th>
+      <th>SMA</th>
+      <th>WMA</th>
+      <th>SES</th>
+      <th>ARIMA</th>
+      <th>LSTM</th>
+      <th>GRU</th>
+      <th>RNN</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>RMSE (in MW)</td>
+      <td colspan="1" id='sma1'>Choose a Date</td>
+      <td colspan="1" id='wma1'>Choose a Date</td>
+      <td colspan="1" id='ses1'>Choose a Date</td>
+      <td colspan="1" id='arima1'>Choose a Date</td>
+      <td colspan="1" id='lstm1'>Choose a Date</td>
+      <td colspan="1" id='gru1'>Choose a Date</td>
+      <td colspan="1" id='rnn1'>Choose a Date</td>
+    </tr>
+
+    <tr>
+      <td>MAPE (in %)</td>
+      <td colspan="1" id='sma1M'>Choose a Date</td>
+      <td colspan="1" id='wma1M'>Choose a Date</td>
+      <td colspan="1" id='ses1M'>Choose a Date</td>
+      <td colspan="1" id='arima1M'>Choose a Date</td>
+      <td colspan="1" id='lstm1M'>Choose a Date</td>
+      <td colspan="1" id='gru1M'>Choose a Date</td>
+      <td colspan="1" id='rnn1M'>Choose a Date</td>
+    </tr>
+
+  </tbody>
+</table>
+
+
+
+
+<script src = "/static/main1.js"></script>
+
+</body>
+
+
+
+</html>
+
+<!-- </form> -->
+
+
+<!-- <script>
+function load() {
+  var xhttp = new XMLHttpRequest();
+  xhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      document.getElementById("d").innerHTML = this.responseText;
+    }
+  };
+  console.log("audshsjbhakjbdsbdsvhds            8888888888 ");
+  xhttp.open("GET", "/gfdgfdg/", true);
+  xhttp.setRequestHeader("X-CSRFToken", '{{ csrf_token }}')
+  // xhttp.setRequestHeader("X-CSRFToken", csrftoken)
+  xhttp.send();
+}
+</script> -->
+
+<!-- <table border = '1'>
+    <tr>
+        <th><h3>Timestamp</h3></th>
+        <th><h3>Load_value</h3></th>
+        <th><h3>Date</h3></th>
+    </tr>
+    {% for item in query_results %}
+    <tr>
+        <td>{{ item.timestamp }}</td>
+        <td>{{item.load_value}}
+        <td>{{ item.date }}</td>
+    </tr>
+    {% endfor %}
+</table> -->
+
+<!-- <div id="demo">
+<h3>The XMLHttpRequest Object</h3>
+<button type="button" onclick="loadDoc()">Change Content</button>
+</div>
+
+
+
+</body>
+</html>
